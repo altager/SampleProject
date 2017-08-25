@@ -30,18 +30,20 @@ class CliHandler(WebSocketHandler):
 
     def on_message(self, data):
         print(data)
+        received_data = None
         try:
-            income = json_decode(data)
+            received_data = json_decode(data)
         except TypeError as e:
             print("Bad JSON data. Msg:{0}".format(e.message))
-        for key in income:
+        for key in received_data:
             if key == "ts_address":
-                self.test_server_connect(income[key])
+                #if not received_data[key] == '':
+                self.test_server_connect(received_data[key])
             elif key == "tests":
-                print(income[key])
-                self.test_methods_run(income[key])
+                print(received_data[key])
+                self.test_methods_run(received_data[key])
             else:
-                print("Invalid key {0}".format(income))
+                print("Invalid key {0}".format(received_data))
 
     def on_close(self):
         print("WebSocket connection closed.")
@@ -67,13 +69,13 @@ class CliHandler(WebSocketHandler):
         for i in test_methods:
             try:
                 self.write_message("[{0}][RUNNING] {1}".format(str(datetime.now()), i))
-                getattr(self.tc.connection, i)()
-                print("[{0}][PASSED] {1} {2}".format(str(datetime.now()), i, self))
-                self.write_message("[{0}][PASSED] {1}".format(str(datetime.now()), i))
+                received_data = (getattr(self.tc.connection, i)())
+                print("[{0}][PASSED] {1} {2} Received data: {3}".format(str(datetime.now()), i, self, received_data))
+                self.write_message("[{0}][PASSED] {1} Received data: {2}".format(str(datetime.now()), i, received_data))
             except xmlrpc.client.Fault as err:
-                self.write_message("[{0}][FAILED] {1}{2}".format(str(datetime.now()), i, err.faultString))
+                self.write_message("[{0}][FAILED] {1} {2}".format(str(datetime.now()), i, err.faultString))
             except xmlrpc.client.ProtocolError as err:
-                self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.message))
+                self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.errmsg))
             except IOError as err:
                 self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
 

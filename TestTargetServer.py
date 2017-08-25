@@ -1,10 +1,11 @@
-from xmlrpc.server import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
+from xmlrpc.server import SimpleXMLRPCServer
 from socketserver import ThreadingMixIn
 
 
 class TestTargetServer(ThreadingMixIn, SimpleXMLRPCServer):
     def __init__(self, address):
         super(TestTargetServer, self).__init__(address)
+        self.stop = False
 
     def run_server(self, test_instance=None):
         self.register_introspection_functions()
@@ -15,9 +16,8 @@ class TestTargetServer(ThreadingMixIn, SimpleXMLRPCServer):
         self.serve_forever()
 
     def serve_forever(self):
-        #For earlier versions of Python(Jython 2.5)
-        #For Python >=2.7 self.shutdown()
-        self.stop = False
+        # For earlier versions of Python(Jython 2.5)
+        # For Python >=2.7 self.shutdown()
         while not self.stop:
             self.handle_request()
 

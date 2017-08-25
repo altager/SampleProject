@@ -2,7 +2,7 @@ from TestTargetServer import TestTargetServer
 import time
 
 
-class SimpleTest():
+class SimpleTest:
     def test_001(self):
         time.sleep(6)
         return "ok.1"

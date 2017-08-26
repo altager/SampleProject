@@ -1,43 +1,15 @@
-import xmlrpc.client
-import xml.etree.ElementTree as ET
+from rpc_handlers import TestAgentClient
+import logging
 import socket
+import xmlrpc.client
+
+module_logger = logging.getLogger(__name__)
 
 
-def value_from_test_config_xml(key, xml_config_path):
-    try:
-        return ET.parse(xml_config_path).find(key).text
-    except Exception:
-        print("[ERROR] Test config doesn't exists!")
-    return None
-
-
-class TestAgentClient:
-    def __init__(self, server_ip):
-        self.test_methods_list = []
-        self.connection = TestAgentClient.connector(server_ip)
-        print(self.connection)
-        self.address_list = []
-
-    @staticmethod
-    def connector(server_ip):
-        # TODO: multiple connector to TestServers from conn_list
-        conn_str = "http://%s" % server_ip
-        client_conn_build = xmlrpc.client.ServerProxy(conn_str, allow_none=True)
-        return client_conn_build
-
-    def extract_test_methods(self, test_method_prefix):
-        try:
-            for test_method in self.connection.system.listMethods():
-                if test_method[:len(test_method_prefix)] == test_method_prefix:
-                    self.test_methods_list.append(test_method)
-        except IOError as err:
-            print("[ERROR][CODE={0}] {1}".format(err.errno, err.strerror))
-        return self.test_methods_list
-
-    # Created that method for using tests in TeamCity
+class TeamcityFormatterClient(TestAgentClient):
     def iterate_test_run(self, test_suite, res_timeout=1000, nonstop_mode=False, test_method_prefix='test'):
         socket.setdefaulttimeout(res_timeout)
-        print(self.extract_test_methods(test_method_prefix))
+        module_logger.log(logging.INFO, self.extract_test_methods(test_method_prefix))
         suite_result = True
         print("##teamcity[testSuiteStarted name='%s']" % test_suite)
         for test_method in self.test_methods_list:
@@ -71,4 +43,3 @@ class TestAgentClient:
             print("##teamcity[testFinished name='%s']" % test_method)
         print("##teamcity[testSuiteFinished name='%s']" % test_suite)
         return suite_result
-

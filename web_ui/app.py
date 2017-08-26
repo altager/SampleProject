@@ -1,18 +1,22 @@
+import os
+import socket
+import xmlrpc.client
+import logging
+from datetime import datetime
+from multiprocessing.pool import ThreadPool
+
+from tornado.escape import json_decode
+from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, Application
 from tornado.websocket import WebSocketHandler
-from tornado.escape import json_decode
-from tornado.httpserver import HTTPServer
-from multiprocessing.pool import ThreadPool
-from TestAgentClient import TestAgentClient
-from datetime import datetime
-import socket
-import xmlrpc.client
-import os
 
+from rpc_handlers.TestAgentClient import TestAgentClient
 
 ws_listeners = []
-_workers = ThreadPool(15)
+_workers = ThreadPool(4)
+
+module_logger = logging.getLogger(__name__)
 
 
 def run_background(func, args=()):
@@ -26,27 +30,26 @@ class MainHandler(RequestHandler):
 
 class CliHandler(WebSocketHandler):
     def open(self):
-        print("WebSocket connection opened")
+        module_logger.log(logging.INFO, "WebSocket connection opened")
 
     def on_message(self, data):
-        print(data)
+        module_logger.log(logging.INFO, data)
         received_data = None
         try:
             received_data = json_decode(data)
         except TypeError as e:
-            print("Bad JSON data. Msg:{0}".format(e.message))
+            module_logger.log(logging.ERROR, "Bad JSON data. Msg:{0}".format(e.message))
         for key in received_data:
             if key == "ts_address":
-                #if not received_data[key] == '':
                 self.test_server_connect(received_data[key])
             elif key == "tests":
-                print(received_data[key])
+                module_logger.log(logging.INFO, received_data[key])
                 self.test_methods_run(received_data[key])
             else:
-                print("Invalid key {0}".format(received_data))
+                module_logger.log(logging.ERROR, "Invalid key {0}".format(received_data))
 
     def on_close(self):
-        print("WebSocket connection closed.")
+        module_logger.log(logging.INFO, "WebSocket connection closed.")
 
     def test_server_connect(self, data):
         self.tc = TestAgentClient(data)
@@ -70,7 +73,7 @@ class CliHandler(WebSocketHandler):
             try:
                 self.write_message("[{0}][RUNNING] {1}".format(str(datetime.now()), i))
                 received_data = (getattr(self.tc.connection, i)())
-                print("[{0}][PASSED] {1} {2} Received data: {3}".format(str(datetime.now()), i, self, received_data))
+                module_logger.log(logging.INFO, "[{0}][PASSED] {1} {2} Received data: {3}".format(str(datetime.now()), i, self, received_data))
                 self.write_message("[{0}][PASSED] {1} Received data: {2}".format(str(datetime.now()), i, received_data))
             except xmlrpc.client.Fault as err:
                 self.write_message("[{0}][FAILED] {1} {2}".format(str(datetime.now()), i, err.faultString))
@@ -80,7 +83,7 @@ class CliHandler(WebSocketHandler):
                 self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
 
 
-class MyApplication(Application):
+class app(Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
@@ -91,7 +94,7 @@ class MyApplication(Application):
 
 
 if __name__ == "__main__":
-    application = MyApplication()
+    application = app()
     http_server = HTTPServer(application)
     application.listen(8000)
     try:

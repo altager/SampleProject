@@ -1,9 +1,9 @@
-from rpc_handlers import TestAgentClient
 import logging
 import socket
 import xmlrpc.client
 
-module_logger = logging.getLogger(__name__)
+from . import module_logger
+from rpc_handlers import TestAgentClient
 
 
 class TeamcityFormatterClient(TestAgentClient):

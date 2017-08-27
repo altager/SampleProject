@@ -1,15 +1,8 @@
 import xmlrpc.client
 import xml.etree.ElementTree as ET
 import logging
-import sys
 
-console = logging.StreamHandler(sys.stdout)
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s',
-    handlers=[console]
-)
-module_logger = logging.getLogger('tac_logger')
+from . import module_logger
 
 
 def value_from_test_config_xml(key, xml_config_path):

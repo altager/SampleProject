@@ -76,10 +76,13 @@ class CliHandler(WebSocketHandler):
                 module_logger.log(logging.INFO, "[{0}][PASSED] {1} {2} Received data: {3}".format(str(datetime.now()), i, self, received_data))
                 self.write_message("[{0}][PASSED] {1} Received data: {2}".format(str(datetime.now()), i, received_data))
             except xmlrpc.client.Fault as err:
+                module_logger.log(logging.INFO, "[{0}][FAILED] {1} {2}".format(str(datetime.now()), i, err.faultString))
                 self.write_message("[{0}][FAILED] {1} {2}".format(str(datetime.now()), i, err.faultString))
             except xmlrpc.client.ProtocolError as err:
+                module_logger.log(logging.ERROR, "[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.errmsg))
                 self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.errmsg))
             except IOError as err:
+                module_logger.log(logging.ERROR, "[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
                 self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
 
 

@@ -1,5 +1,8 @@
+import logging
+
 from xmlrpc.server import SimpleXMLRPCServer
 from socketserver import ThreadingMixIn
+from . import module_logger
 
 
 class TestTargetServer(ThreadingMixIn, SimpleXMLRPCServer):
@@ -12,7 +15,7 @@ class TestTargetServer(ThreadingMixIn, SimpleXMLRPCServer):
         self.register_instance(test_instance)
         self.register_function(self.run_server)
         self.register_function(self.stop_server)
-        print("TestAgentServer running on %s:%s..." % (self.server_address[0], self.server_address[1]))
+        module_logger.log(logging.INFO, "TestAgentServer running on %s:%s..." % (self.server_address[0], self.server_address[1]))
         self.serve_forever()
 
     def serve_forever(self):

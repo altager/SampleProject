@@ -7,3 +7,5 @@ logging.basicConfig(
     format='[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s',
     handlers=[console]
 )
+
+module_logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 import time
 
-from rpc_handlers.TestTargetServer import TestTargetServer
+from rpc_handlers import TestTargetServer
 
 
 class SimpleTest:

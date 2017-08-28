@@ -22,7 +22,6 @@ class TestAgentClient:
 
     @staticmethod
     def connector(server_ip):
-        # TODO: multiple connector to TestServers from conn_list
         conn_str = "http://%s" % server_ip
         client_conn_build = xmlrpc.client.ServerProxy(conn_str, allow_none=True)
         return client_conn_build
@@ -34,4 +33,5 @@ class TestAgentClient:
                     self.test_methods_list.append(test_method)
         except IOError as err:
             module_logger.log(logging.ERROR, "[ERROR][CODE={0}] {1}".format(err.errno, err.strerror))
+            raise
         return self.test_methods_list

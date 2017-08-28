@@ -1,15 +1,22 @@
+import logging
 import os
 import socket
 import xmlrpc.client
-import logging
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 
+import tornado.options
 from tornado.escape import json_decode
-from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
+from tornado.options import define, options
 from tornado.web import RequestHandler, Application
 from tornado.websocket import WebSocketHandler
+
+define("port", default=8000, help="run on the given port", type=int)
+
+import os,sys
+parentdir = os.path.dirname(__file__)
+sys.path.insert(0,parentdir)
 
 from rpc_handlers.TestAgentClient import TestAgentClient
 
@@ -38,13 +45,13 @@ class CliHandler(WebSocketHandler):
         try:
             received_data = json_decode(data)
         except TypeError as e:
-            module_logger.log(logging.ERROR, "Bad JSON data. Msg:{0}".format(e.message))
+            module_logger.log(logging.ERROR, "Bad JSON data")
         for key in received_data:
             if key == "ts_address":
                 self.test_server_connect(received_data[key])
             elif key == "tests":
                 module_logger.log(logging.INFO, received_data[key])
-                self.test_methods_run(received_data[key])
+                run_background(self.run_tests, (received_data[key],))
             else:
                 module_logger.log(logging.ERROR, "Invalid key {0}".format(received_data))
 
@@ -62,45 +69,49 @@ class CliHandler(WebSocketHandler):
             result["Error"] = e.strerror
         self.write_message(result)
 
-    def test_methods_run(self, data):
-        run_background(self.run_tests, (data,))
-
     def run_tests(self, data):
         test_methods = data.split(' ')
-        del(test_methods[0])
+        del (test_methods[0])
         socket.setdefaulttimeout(3000)
         for i in test_methods:
             try:
                 self.write_message("[{0}][RUNNING] {1}".format(str(datetime.now()), i))
                 received_data = (getattr(self.tc.connection, i)())
-                module_logger.log(logging.INFO, "[{0}][PASSED] {1} {2} Received data: {3}".format(str(datetime.now()), i, self, received_data))
+                module_logger.log(logging.INFO,
+                                  "[{0}][PASSED] {1} {2} Received data: {3}".format(str(datetime.now()), i, self,
+                                                                                    received_data))
                 self.write_message("[{0}][PASSED] {1} Received data: {2}".format(str(datetime.now()), i, received_data))
             except xmlrpc.client.Fault as err:
                 module_logger.log(logging.INFO, "[{0}][FAILED] {1} {2}".format(str(datetime.now()), i, err.faultString))
                 self.write_message("[{0}][FAILED] {1} {2}".format(str(datetime.now()), i, err.faultString))
             except xmlrpc.client.ProtocolError as err:
-                module_logger.log(logging.ERROR, "[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.errmsg))
+                module_logger.log(logging.ERROR,
+                                  "[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.errmsg))
                 self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errcode, err.errmsg))
             except IOError as err:
-                module_logger.log(logging.ERROR, "[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
+                module_logger.log(logging.ERROR,
+                                  "[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
                 self.write_message("[{0}][ERROR][CODE={1}] {2}".format(str(datetime.now()), err.errno, err.strerror))
 
 
-class app(Application):
+class App(Application):
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
             (r"/cli", CliHandler),
         ]
-        settings = dict(template_path=os.path.join(os.path.dirname(__file__), "templates"), static_path=os.path.join(os.path.dirname(__file__), "static"), )
+        settings = dict(template_path=os.path.join(os.path.dirname(__file__), "templates"),
+                        static_path=os.path.join(os.path.dirname(__file__), "static"), )
         Application.__init__(self, handlers, **settings)
 
 
+def main():
+    tornado.options.parse_command_line()
+    app = App()
+    app.listen(options.port)
+    module_logger.log(logging.INFO, "Server started listening on port {0}".format(options.port))
+    IOLoop.current().start()
+
+
 if __name__ == "__main__":
-    application = app()
-    http_server = HTTPServer(application)
-    application.listen(8000)
-    try:
-        IOLoop.instance().start()
-    except Exception as exc:
-        print ("Error: {0}".format(str(exc)))
+    main()

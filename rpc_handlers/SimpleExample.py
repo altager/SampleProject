@@ -8,7 +8,7 @@ class SimpleTest:
         time.sleep(6)
         return "ok.1"
 
-    def test_002(self):
+    def test_004(self):
         time.sleep(5)
         return "ok.2"
 
@@ -16,6 +16,6 @@ class SimpleTest:
         raise Exception("Exc")
 
 if __name__ == "__main__":
-    srv = TestTargetServer(("0.0.0.0", 1336))
+    srv = TestTargetServer(("0.0.0.0", 1337))
     srv.run_server(test_instance=SimpleTest())
 

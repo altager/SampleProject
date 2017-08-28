@@ -15,6 +15,7 @@
             };
 
             $('#connect_server_button').click(function(){
+                $('#test_methods').empty()
                 $('#test_methods_result').append($("<p></p>").text("Session with:"+ $('#server_address').val()));
                 ws.send(JSON.stringify({ts_address:$('#server_address').val()}));
                 ws.onmessage = function (evt) {
@@ -23,6 +24,10 @@
                     });
                     $('#run_tests_button').removeAttr("disabled")
                 };
+            });
+
+            $('#clear_log_button').click(function(){
+                $('#test_methods_result').empty()
             });
 
             $('#run_tests_button').click(function(){
@@ -55,6 +60,7 @@
                 <select multiple class="form-control" id="test_methods" style="height:300px"></select>
             </form>
             <button type="button" id="run_tests_button" class="btn btn-success" disabled="disabled" style="margin-bottom: 20px; margin-top: 20px;">Run Tests</button>
+            <button type="button" id="clear_log_button" class="btn btn-primary" style="margin-bottom: 20px; margin-top: 20px;">Clear log</button>
         </div>
         <div class="col-md-8">
             <div id="test_methods_result"></div>

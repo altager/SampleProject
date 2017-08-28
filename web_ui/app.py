@@ -14,10 +14,6 @@ from tornado.websocket import WebSocketHandler
 
 define("port", default=8000, help="run on the given port", type=int)
 
-import os,sys
-parentdir = os.path.dirname(__file__)
-sys.path.insert(0,parentdir)
-
 from rpc_handlers.TestAgentClient import TestAgentClient
 
 ws_listeners = []

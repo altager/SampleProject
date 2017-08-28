@@ -16,6 +16,6 @@ class SimpleTest:
         raise Exception("Exc")
 
 if __name__ == "__main__":
-    srv = TestTargetServer(("0.0.0.0", 1337))
+    srv = TestTargetServer.TestTargetServer(("0.0.0.0", 1337))
     srv.run_server(test_instance=SimpleTest())
 
